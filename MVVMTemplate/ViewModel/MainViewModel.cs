@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using MVVMTemplate.DataAccess;
 using MVVMTemplate.DialogServiceTools;
@@ -18,7 +19,7 @@ namespace MVVMTemplate.ViewModel
         public event EventHandler<DialogCloseRequestedEventArgs> RequestClose;
 
 
-        public List<DataItem> DataItems { get => dataItemRepository.DataItems; }
+        public ObservableCollection<DataItem> DataItems { get => dataItemRepository.DataItems; }
         public DataItem SelectedItem { get; set; }
 
         public MainViewModel()
@@ -50,7 +51,12 @@ namespace MVVMTemplate.ViewModel
 
         private void OnRequestLoadData()
         {
-            dataItemRepository.LoadData();
+            dataItemRepository.GetSingleHttpClient(5);
+            dataItemRepository.PostHttpClient();
+
+            dataItemRepository.GetListWebClient();
+            dataItemRepository.GetSingleWebClient(2);
+
             OnPropertyChanged("DataItems");
         }
 

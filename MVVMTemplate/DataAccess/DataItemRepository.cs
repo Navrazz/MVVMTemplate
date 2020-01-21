@@ -1,26 +1,81 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using Newtonsoft.Json;
 using MVVMTemplate.Model;
+using MVVMTemplate.Properties;
+using System.Net;
 
 namespace MVVMTemplate.DataAccess
 {
     public class DataItemRepository
     {
-        public List<DataItem> DataItems { get; private set; }
+        private HttpClient client;
+
+        public ObservableCollection<DataItem> DataItems { get; private set; }
 
         public DataItemRepository()
         {
-            DataItems = new List<DataItem>();
+            this.client        = new HttpClient();
+            client.BaseAddress = new Uri(Settings.Default.WebServiceAddress);
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            DataItems = new ObservableCollection<DataItem>();
         }
 
-        public void LoadData()
+        public void GetListHttpClient()
         {
-            var dataItems = new List<DataItem>();
-            dataItems.Add(new DataItem { UserId = 1, UserName = "test1" });
-            dataItems.Add(new DataItem { UserId = 2, UserName = "test2" });
-            dataItems.Add(new DataItem { UserId = 3, UserName = "test3" });
-            dataItems.Add(new DataItem { UserId = 4, UserName = "test4" });
+            HttpResponseMessage response = client.GetAsync("api/Values").Result;    
+            if (response.IsSuccessStatusCode)
+            {
+                var result = response.Content.ReadAsStringAsync().Result;
 
-            DataItems = dataItems;
+                ObservableCollection<DataItem> dataItems = JsonConvert.DeserializeObject<ObservableCollection<DataItem>>(result);
+                DataItems = dataItems;
+            }
+        }
+
+        public void GetSingleHttpClient(int id)
+        {
+            HttpResponseMessage response = client.GetAsync("api/Values/" + id).Result;  
+            if (response.IsSuccessStatusCode)
+            {
+                var result = response.Content.ReadAsStringAsync().Result;
+
+                DataItem dataItem = JsonConvert.DeserializeObject<DataItem>(result);
+                if (dataItem != null)
+                    DataItems.Add(dataItem);
+            }
+        }
+
+        public void GetListWebClient()
+        {
+            using (WebClient webClient = new WebClient())
+            {
+                var result = webClient.DownloadString(Settings.Default.WebServiceAddress + "api/Values");
+
+                ObservableCollection<DataItem> dataItems = JsonConvert.DeserializeObject<ObservableCollection<DataItem>>(result);
+                DataItems = dataItems;
+            }
+        }
+
+        public void GetSingleWebClient(int id)
+        {
+            using (WebClient webClient = new WebClient())
+            {
+                var result = webClient.DownloadString(Settings.Default.WebServiceAddress + "api/Values/" + id);
+
+                DataItem dataItems = JsonConvert.DeserializeObject<DataItem>(result);
+                DataItems.Add(dataItems);
+            }
+        }
+
+
+        public void PostHttpClient()
+        {
+            DataItem item = new DataItem { UserId = 5, UserName = "test5" };
+            var response = client.PostAsJsonAsync("api/Values", item).Result;
         }
     }
 }
